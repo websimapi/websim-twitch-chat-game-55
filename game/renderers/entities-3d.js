@@ -19,7 +19,11 @@ export class Entities3D {
         const camX = Math.floor(game.camera.x);
         const camY = Math.floor(game.camera.y);
         // Add padding to render distance to prevent popping at screen edges during rotation
-        const renderDist = (game.settings.visuals.render_distance || 30) + 8;
+        // and scale with zoom so zooming out doesn't under‑render ground objects.
+        const baseRender = game.settings.visuals.render_distance || 30;
+        const zoom = game.camera.zoom || 20;
+        const extraPadding = Math.max(8, zoom * 0.75);
+        const renderDist = baseRender + extraPadding;
 
         const minX = Math.max(0, camX - renderDist);
         const maxX = Math.min(map.width, camX + renderDist);
@@ -127,8 +131,9 @@ export class Entities3D {
             // Use polygonOffset for ground items to prevent z-fighting and ensure they sit "on top" of the terrain
             if (renderKind === 'ground') {
                 matOptions.polygonOffset = true;
-                matOptions.polygonOffsetFactor = -1.0; // Pull forward
-                matOptions.polygonOffsetUnits = -4.0;
+                // Slightly pull forward; small values reduce depth precision artifacts when zooming
+                matOptions.polygonOffsetFactor = -0.5;
+                matOptions.polygonOffsetUnits = -1.0;
             }
 
             const mat = new THREE.MeshLambertMaterial(matOptions);
@@ -156,8 +161,8 @@ export class Entities3D {
             // sample height at each corner of the 1x1 tile area.
             const posAttr = mesh.geometry.attributes.position;
             const vertexCount = posAttr.count;
-            // No physical lift; rely on polygonOffset for visual layering
-            const yOffset = 0.0; 
+            // Lift very slightly above the terrain to avoid depth fighting / clipping when zooming
+            const yOffset = 0.02; 
 
             for (let i = 0; i < vertexCount; i++) {
                 const localX = posAttr.getX(i); // in range [-0.5, 0.5]
