@@ -18,7 +18,8 @@ export class Entities3D {
         const map = game.map;
         const camX = Math.floor(game.camera.x);
         const camY = Math.floor(game.camera.y);
-        const renderDist = game.settings.visuals.render_distance || 30;
+        // Add padding to render distance to prevent popping at screen edges during rotation
+        const renderDist = (game.settings.visuals.render_distance || 30) + 8;
 
         const minX = Math.max(0, camX - renderDist);
         const maxX = Math.min(map.width, camX + renderDist);
@@ -134,7 +135,12 @@ export class Entities3D {
             mesh = new THREE.Mesh(geometry, mat);
             mesh.castShadow = true;
             mesh.receiveShadow = true;
+            
+            // Fix: Disable frustum culling for ground objects.
+            // Since we modify vertices in-place to match terrain height, the bounding box becomes stale.
+            // We manually manage visibility via the render loop distance check anyway.
             mesh.frustumCulled = false;
+
             this.renderer.scene.add(mesh);
             this.sprites.set(id, mesh);
         }

@@ -49,6 +49,9 @@ export class Terrain3D {
         this.mesh = new THREE.Mesh(geometry, material);
         this.mesh.rotation.x = -Math.PI / 2; // Lay flat
         
+        // Prevent clipping when terrain height variations exceed the flat plane's bounding box
+        this.mesh.frustumCulled = false;
+        
         // Offset to align top-left of map grid (0,0) with world space 0,0
         this.mesh.position.set(map.width / 2 - 0.5, 0, map.height / 2 - 0.5);
         this.mesh.receiveShadow = true;
