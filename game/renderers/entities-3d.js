@@ -134,6 +134,7 @@ export class Entities3D {
             mesh = new THREE.Mesh(geometry, mat);
             mesh.castShadow = true;
             mesh.receiveShadow = true;
+            mesh.frustumCulled = false;
             this.renderer.scene.add(mesh);
             this.sprites.set(id, mesh);
         }
