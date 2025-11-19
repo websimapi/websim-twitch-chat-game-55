@@ -16,6 +16,12 @@ export class Entities3D {
 
     render(game, frameId) {
         const map = game.map;
+
+        // Safeguard: if map or grid is not ready, skip rendering entities
+        if (!map || !map.grid || !Array.isArray(map.grid) || map.grid.length === 0) {
+            return;
+        }
+
         const camX = Math.floor(game.camera.x);
         const camY = Math.floor(game.camera.y);
         // Add padding to render distance to prevent popping at screen edges during rotation
@@ -31,11 +37,16 @@ export class Entities3D {
         const maxY = Math.min(map.height, camY + renderDist);
 
         for (let y = minY; y < maxY; y++) {
-            for (let x = minX; x < maxX; x++) {
-                const tile = map.grid[y][x];
-                if (tile === TILE_TYPE.GRASS) continue;
+            const row = map.grid[y];
+            if (!row) continue; // Safeguard against undefined rows
 
-                const h = map.getHeight(x + 0.5, y + 0.5);
+            for (let x = minX; x < maxX; x++) {
+                const tile = row[x];
+                if (tile === TILE_TYPE.GRASS || tile === undefined || tile === null) continue;
+
+                const h = typeof map.getHeight === 'function'
+                    ? map.getHeight(x + 0.5, y + 0.5)
+                    : 0;
 
                 if (tile === TILE_TYPE.TREE) {
                     // Standing sprite (paper-style)
@@ -118,6 +129,7 @@ export class Entities3D {
                 geometry = new THREE.PlaneGeometry(1, 1, 1, 1);
                 geometry.rotateX(-Math.PI / 2); // Lay flat on XZ plane
             } else {
+                this.billboardGeometry.computeBoundingBox();
                 geometry = this.billboardGeometry;
             }
 
@@ -170,7 +182,7 @@ export class Entities3D {
                 const worldX = x + localX;
                 const worldZ = y + localZ;
 
-                const terrainH = map.getHeight(worldX, worldZ) + yOffset;
+                const terrainH = (typeof map.getHeight === 'function' ? map.getHeight(worldX, worldZ) : 0) + yOffset;
                 posAttr.setY(i, terrainH);
             }
             posAttr.needsUpdate = true;
